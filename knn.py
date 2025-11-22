@@ -1,4 +1,3 @@
-
 import numpy as np
 import faiss
 
@@ -8,6 +7,7 @@ class KNNClassifier:
         self.distance_metric = distance_metric
         self.X_train = None
         self.Y_train = None
+        self.index = None
 
     def fit(self, X_train, Y_train):
         """
@@ -39,7 +39,15 @@ class KNNClassifier:
         Returns:
         - (numpy array) of size (M,): Predicted class labels.
         """
-        #### YOUR CODE GOES HERE ####
+        distances, indices = self.knn_distance(X)
+        M = X.shape[0]
+        y_pred = np.zeros(M, dtype=self.Y_train.dtype)
+        for i in range(M):
+            neighbor_labels = self.Y_train[indices[i]]
+            values, counts = np.unique(neighbor_labels, return_counts=True)
+            y_pred[i] = values[np.argmax(counts)]
+
+        return y_pred
 
     def knn_distance(self, X):
         """
@@ -54,4 +62,8 @@ class KNNClassifier:
         - (numpy array) of size (M, k): Indices of kNNs.
         """
         X = X.astype(np.float32)
-	#### YOUR CODE GOES HERE ####
+        return self.index.search(X, self.k)
+    
+    
+        
+        
