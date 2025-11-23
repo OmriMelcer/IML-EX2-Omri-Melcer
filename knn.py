@@ -31,7 +31,7 @@ class KNNClassifier:
 
     def predict(self, X):
         """
-        Predict the class labels for the given data.
+        Predict the class labels for the given data using majority voting.
 
         Parameters:
         - X (numpy array) of size (M, d): Feature vectors.
@@ -46,6 +46,42 @@ class KNNClassifier:
             neighbor_labels = self.Y_train[indices[i]]
             values, counts = np.unique(neighbor_labels, return_counts=True)
             y_pred[i] = values[np.argmax(counts)]
+
+        return y_pred
+    
+    def predict_weighted(self, X, epsilon=1e-10):
+        """
+        Predict the class labels for the given data using inverse distance weighting.
+
+        Parameters:
+        - X (numpy array) of size (M, d): Feature vectors.
+        - epsilon (float): Small constant to prevent division by zero.
+
+        Returns:
+        - (numpy array) of size (M,): Predicted class labels.
+        """
+        distances, indices = self.knn_distance(X)
+        M = X.shape[0]
+        y_pred = np.zeros(M, dtype=self.Y_train.dtype)
+        
+        for i in range(M):
+            neighbor_labels = self.Y_train[indices[i]]
+            neighbor_distances = distances[i]
+            
+            # Calculate weights as inverse distance
+            weights = 1.0 / (neighbor_distances + epsilon)
+            
+            # Get unique labels and sum weights for each
+            unique_labels = np.unique(neighbor_labels)
+            label_weights = np.zeros(len(unique_labels))
+            
+            for j, label in enumerate(unique_labels):
+                # Sum weights for all neighbors with this label
+                label_mask = (neighbor_labels == label)
+                label_weights[j] = np.sum(weights[label_mask])
+            
+            # Predict label with highest weighted sum
+            y_pred[i] = unique_labels[np.argmax(label_weights)]
 
         return y_pred
 
